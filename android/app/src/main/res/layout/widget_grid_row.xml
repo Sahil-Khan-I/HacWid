@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:paddingBottom="1dp">
+
+    <!-- This will contain a row of cells for the widget grid -->
+    
+    <TextView
+        android:id="@+id/cell1"
+        style="@style/HeatmapCell"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:text=" " />
+
+    <TextView
+        android:id="@+id/cell2"
+        style="@style/HeatmapCell"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:text=" " />
+
+    <TextView
+        android:id="@+id/cell3"
+        style="@style/HeatmapCell"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:text=" " />
+
+    <TextView
+        android:id="@+id/cell4"
+        style="@style/HeatmapCell"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:text=" " />
+
+    <TextView
+        android:id="@+id/cell5"
+        style="@style/HeatmapCell"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:text=" " />
+
+    <TextView
+        android:id="@+id/cell6"
+        style="@style/HeatmapCell"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:text=" " />
+
+    <TextView
+        android:id="@+id/cell7"
+        style="@style/HeatmapCell"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:text=" " />
+
+</LinearLayout>

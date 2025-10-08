@@ -1,0 +1,384 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_container"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/widget_background"
+    android:orientation="vertical"
+    android:padding="12dp">
+
+    <!-- Header with title and refresh button -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="6dp">
+        
+        <TextView
+            android:id="@+id/widget_title"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:text="Hackatime"
+            android:textColor="#FFFFFF"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:gravity="start"
+            android:padding="2dp" />
+            
+        <ImageView
+            android:id="@+id/refresh_button"
+            android:layout_width="18dp"
+            android:layout_height="18dp"
+            android:src="@drawable/refresh_icon"
+            android:background="?android:attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Refresh" />
+    </LinearLayout>
+
+    <!-- Header info with Slack ID and streaks -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="6dp">
+        
+        <TextView
+            android:id="@+id/slack_id_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="ID: "
+            android:textColor="#CCCCCC"
+            android:textSize="10sp"
+            android:layout_marginEnd="8dp" />
+            
+        <TextView
+            android:id="@+id/current_streak_text"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Current: 0 days"
+            android:textColor="#CCCCCC"
+            android:textSize="10sp"
+            android:layout_marginEnd="8dp" />
+            
+        <TextView
+            android:id="@+id/last_updated"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Updated: --:--"
+            android:textColor="#CCCCCC"
+            android:textSize="10sp" />
+    </LinearLayout>
+    
+    <!-- Loading indicator and error message -->
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+        
+        <ProgressBar
+            android:id="@+id/loading_indicator"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:layout_gravity="center"
+            android:visibility="gone" />
+            
+        <TextView
+            android:id="@+id/error_text"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Error loading data"
+            android:textColor="#FF5555"
+            android:textSize="12sp"
+            android:gravity="center"
+            android:visibility="gone" />
+    </FrameLayout>
+
+    <!-- Activity grid with rounded corners -->
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:background="@drawable/grid_background"
+        android:padding="4dp">
+        
+        <GridLayout
+            android:id="@+id/widget_content"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:columnCount="7"
+            android:rowCount="4"
+            android:layout_gravity="center"
+            android:useDefaultMargins="false"
+            android:alignmentMode="alignBounds"
+            android:columnOrderPreserved="true"
+            android:rowOrderPreserved="true"
+            android:horizontalSpacing="1dp"
+            android:verticalSpacing="1dp">
+            
+            <!-- Row 1 -->
+            <View android:id="@+id/cell_1" 
+                android:layout_width="0dp" 
+                android:layout_height="0dp"
+                android:layout_columnWeight="1"
+                android:layout_rowWeight="1"
+                android:layout_margin="1dp"
+                android:background="#263238" />
+            <View android:id="@+id/cell_2" 
+                android:layout_width="0dp" 
+                android:layout_height="0dp"
+                android:layout_columnWeight="1"
+                android:layout_rowWeight="1"
+                android:layout_margin="1dp"
+                android:background="#263238" />
+            <View android:id="@+id/cell_3" 
+                android:layout_width="0dp" 
+                android:layout_height="0dp"
+                android:layout_columnWeight="1"
+                android:layout_rowWeight="1"
+                android:layout_margin="1dp"
+                android:background="#263238" />
+            <View android:id="@+id/cell_4" 
+                android:layout_width="0dp" 
+                android:layout_height="0dp"
+                android:layout_columnWeight="1"
+                android:layout_rowWeight="1"
+                android:layout_margin="1dp"
+                android:background="#263238" />
+            <View android:id="@+id/cell_5" 
+                android:layout_width="0dp" 
+                android:layout_height="0dp"
+                android:layout_columnWeight="1"
+                android:layout_rowWeight="1"
+                android:layout_margin="1dp"
+                android:background="#263238" />
+            <View android:id="@+id/cell_6" 
+                android:layout_width="0dp" 
+                android:layout_height="0dp"
+                android:layout_columnWeight="1"
+                android:layout_rowWeight="1"
+                android:layout_margin="1dp"
+                android:background="#263238" />
+            <View android:id="@+id/cell_7" 
+                android:layout_width="0dp" 
+                android:layout_height="0dp"
+                android:layout_columnWeight="1"
+                android:layout_rowWeight="1"
+                android:layout_margin="1dp"
+                android:background="#263238" />
+            
+            <!-- Row 2 -->
+            <View android:id="@+id/cell_8" 
+                android:layout_width="0dp" 
+                android:layout_height="0dp"
+                android:layout_columnWeight="1"
+                android:layout_rowWeight="1"
+                android:layout_margin="1dp"
+                android:background="#263238" />
+            <View android:id="@+id/cell_9" 
+                android:layout_width="0dp" 
+                android:layout_height="0dp"
+                android:layout_columnWeight="1"
+                android:layout_rowWeight="1"
+                android:layout_margin="1dp"
+                android:background="#263238" />
+            <View android:id="@+id/cell_10" 
+                android:layout_width="0dp" 
+                android:layout_height="0dp"
+                android:layout_columnWeight="1"
+                android:layout_rowWeight="1"
+                android:layout_margin="1dp"
+                android:background="#263238" />
+            <View android:id="@+id/cell_11" 
+                android:layout_width="0dp" 
+                android:layout_height="0dp"
+                android:layout_columnWeight="1"
+                android:layout_rowWeight="1"
+                android:layout_margin="1dp"
+                android:background="#263238" />
+            <View android:id="@+id/cell_12" 
+                android:layout_width="0dp" 
+                android:layout_height="0dp"
+                android:layout_columnWeight="1"
+                android:layout_rowWeight="1"
+                android:layout_margin="1dp"
+                android:background="#263238" />
+            <View android:id="@+id/cell_13" 
+                android:layout_width="0dp" 
+                android:layout_height="0dp"
+                android:layout_columnWeight="1"
+                android:layout_rowWeight="1"
+                android:layout_margin="1dp"
+                android:background="#263238" />
+            <View android:id="@+id/cell_14" 
+                android:layout_width="0dp" 
+                android:layout_height="0dp"
+                android:layout_columnWeight="1"
+                android:layout_rowWeight="1"
+                android:layout_margin="1dp"
+                android:background="#263238" />
+            
+            <!-- Row 3 -->
+            <View android:id="@+id/cell_15" 
+                android:layout_width="0dp" 
+                android:layout_height="0dp"
+                android:layout_columnWeight="1"
+                android:layout_rowWeight="1"
+                android:layout_margin="1dp"
+                android:background="#263238" />
+            <View android:id="@+id/cell_16" 
+                android:layout_width="0dp" 
+                android:layout_height="0dp"
+                android:layout_columnWeight="1"
+                android:layout_rowWeight="1"
+                android:layout_margin="1dp"
+                android:background="#263238" />
+            <View android:id="@+id/cell_17" 
+                android:layout_width="0dp" 
+                android:layout_height="0dp"
+                android:layout_columnWeight="1"
+                android:layout_rowWeight="1"
+                android:layout_margin="1dp"
+                android:background="#263238" />
+            <View android:id="@+id/cell_18" 
+                android:layout_width="0dp" 
+                android:layout_height="0dp"
+                android:layout_columnWeight="1"
+                android:layout_rowWeight="1"
+                android:layout_margin="1dp"
+                android:background="#263238" />
+            <View android:id="@+id/cell_19" 
+                android:layout_width="0dp" 
+                android:layout_height="0dp"
+                android:layout_columnWeight="1"
+                android:layout_rowWeight="1"
+                android:layout_margin="1dp"
+                android:background="#263238" />
+            <View android:id="@+id/cell_20" 
+                android:layout_width="0dp" 
+                android:layout_height="0dp"
+                android:layout_columnWeight="1"
+                android:layout_rowWeight="1"
+                android:layout_margin="1dp"
+                android:background="#263238" />
+            <View android:id="@+id/cell_21" 
+                android:layout_width="0dp" 
+                android:layout_height="0dp"
+                android:layout_columnWeight="1"
+                android:layout_rowWeight="1"
+                android:layout_margin="1dp"
+                android:background="#263238" />
+            
+            <!-- Row 4 -->
+            <View android:id="@+id/cell_22" 
+                android:layout_width="0dp" 
+                android:layout_height="0dp"
+                android:layout_columnWeight="1"
+                android:layout_rowWeight="1"
+                android:layout_margin="1dp"
+                android:background="#263238" />
+            <View android:id="@+id/cell_23" 
+                android:layout_width="0dp" 
+                android:layout_height="0dp"
+                android:layout_columnWeight="1"
+                android:layout_rowWeight="1"
+                android:layout_margin="1dp"
+                android:background="#263238" />
+            <View android:id="@+id/cell_24" 
+                android:layout_width="0dp" 
+                android:layout_height="0dp"
+                android:layout_columnWeight="1"
+                android:layout_rowWeight="1"
+                android:layout_margin="1dp"
+                android:background="#263238" />
+            <View android:id="@+id/cell_25" 
+                android:layout_width="0dp" 
+                android:layout_height="0dp"
+                android:layout_columnWeight="1"
+                android:layout_rowWeight="1"
+                android:layout_margin="1dp"
+                android:background="#263238" />
+            <View android:id="@+id/cell_26" 
+                android:layout_width="0dp" 
+                android:layout_height="0dp"
+                android:layout_columnWeight="1"
+                android:layout_rowWeight="1"
+                android:layout_margin="1dp"
+                android:background="#263238" />
+            <View android:id="@+id/cell_27" 
+                android:layout_width="0dp" 
+                android:layout_height="0dp"
+                android:layout_columnWeight="1"
+                android:layout_rowWeight="1"
+                android:layout_margin="1dp"
+                android:background="#263238" />
+            <View android:id="@+id/cell_28" 
+                android:layout_width="0dp" 
+                android:layout_height="0dp"
+                android:layout_columnWeight="1"
+                android:layout_rowWeight="1"
+                android:layout_margin="1dp"
+                android:background="#263238" />
+        </GridLayout>
+    </FrameLayout>
+
+    <!-- Stats section -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginTop="8dp">
+        
+        <!-- Current streak -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center">
+            
+            <TextView
+                android:id="@+id/widget_streak_value"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="0"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+                
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Current streak"
+                android:textColor="#A0A0A0"
+                android:textSize="10sp" />
+        </LinearLayout>
+        
+        <!-- Today's activity -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center">
+            
+            <TextView
+                android:id="@+id/widget_today_value"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="0h"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+                
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Today"
+                android:textColor="#A0A0A0"
+                android:textSize="10sp" />
+        </LinearLayout>
+    </LinearLayout>
+
+</LinearLayout>

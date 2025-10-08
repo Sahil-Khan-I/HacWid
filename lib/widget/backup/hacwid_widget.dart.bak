@@ -1,0 +1,525 @@
+import 'dart:convert';
+import 'package:flutter/material.dart';
+import 'package:home_widget/home_widget.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:http/http.dart' as http;
+import 'package:workmanager/workmanager.dart';
+
+/// Class to manage the Android home screen widget
+/// Note: This class is deprecated - use WidgetUtils instead
+@Deprecated('Use WidgetUtils class instead')
+class HacwidWidget {
+  /// Widget key
+  static const String widgetKey = "hacwidd_widget_data";
+  
+  /// Background task name
+  static const String backgroundTaskName = "hacwidd.updateWidget";
+  
+  /// Background task input parameter
+  static const String backgroundTaskInputData = "slackId";
+  
+  /// Initialize widget services - call this in main.dart
+  static Future<void> initializeWidget() async {
+    debugPrint('HacwidWidget is deprecated. Use WidgetUtils.initializeWidget() instead.');
+    try {
+      await HomeWidget.setAppGroupId('hacwidd_group');
+      debugPrint('Widget initialized successfully');
+    } catch (e) {
+      debugPrint('Error initializing widget: $e');
+    }
+  }
+  
+  /// Register for widget updates
+  static Future<void> registerForUpdates() async {
+    debugPrint('HacwidWidget is deprecated. Use WidgetUtils.registerForUpdates() instead.');
+    try {
+      // This is a stub method - functionality moved to WidgetUtils
+      debugPrint('Widget updates registered successfully');
+    } catch (e) {
+      debugPrint('Error registering for widget updates: $e');
+    }
+  }
+  
+  /// Update widget with latest data
+  static Future<void> updateWidgetData(String slackId) async {
+    debugPrint('HacwidWidget is deprecated. Use WidgetUtils.updateWidgetData() instead.');
+    try {
+      // This is a stub method - functionality moved to WidgetUtils
+      await HomeWidget.saveWidgetData('slackId', slackId);
+      await HomeWidget.updateWidget(
+        androidName: 'com.example.hacwidd.HacwidWidgetProvider',
+        iOSName: 'HacwiddWidgetProvider',
+      );
+      debugPrint('Widget data updated successfully');
+    } catch (e) {
+      debugPrint('Error updating widget data: $e');
+    }
+  }
+  }
+  
+  /// Register for widget updates
+  static Future<void> registerForUpdates() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final slackId = prefs.getString('hackatime_slack_id') ?? '1';
+      
+      // Cancel any existing tasks before registering a new one
+      await Workmanager().cancelByUniqueName(backgroundTaskName);
+      
+      // Register periodic task for widget updates
+      await Workmanager().registerPeriodicTask(
+        backgroundTaskName,
+        backgroundTaskName,
+        frequency: const Duration(hours: 1),
+        initialDelay: const Duration(seconds: 10),
+        constraints: Constraints(
+          networkType: NetworkType.connected,
+        ),
+        inputData: {
+          backgroundTaskInputData: slackId,
+        },
+      );
+      
+      debugPrint('Widget updates registered successfully');
+      
+      // Initial update
+      await updateWidgetData(slackId);
+    } catch (e) {
+      debugPrint('Error registering widget updates: $e');
+    }
+  }
+  
+  /// Update widget data
+  static Future<void> updateWidgetData(String slackId) async {
+    try {
+      // Get preferences for storing activity data
+      final prefs = await SharedPreferences.getInstance();
+      
+      // Check if we should update (limit refreshes to avoid battery drain)
+      final lastUpdate = prefs.getInt('last_widget_update') ?? 0;
+      final now = DateTime.now();
+      final currentTimeMillis = now.millisecondsSinceEpoch;
+      
+      // Only update if more than 15 minutes have passed since last update
+      // unless slackId has changed
+      final storedSlackId = prefs.getString('slack_id') ?? '';
+      final forceUpdate = storedSlackId != slackId;
+      
+      if (!forceUpdate && currentTimeMillis - lastUpdate < 900000) { // 15 min instead of 30
+        debugPrint('Skipping widget update - less than 15 minutes since last update');
+        return;
+      }
+      
+      // Fetch recent activity data
+      final data = await _fetchRecentActivityData(slackId);
+      if (data != null) {
+        // Process data for widget display
+        final processedData = _processActivityData(data);
+        
+        // Format data for widget
+        final currentStreak = processedData['currentStreak'] as int;
+        final longestStreak = processedData['longestStreak'] as int;
+        
+        // Convert activity data to a list of daily data for the widget
+        final recentActivity = processedData['recentActivity'] as Map<String, int>;
+        
+        // Include all days for the widget to display properly
+        // The Android widget expects data for all days
+        final activityList = <Map<String, dynamic>>[];
+        
+        // Get the last 28 days
+        final today = DateTime.now();
+        for (int i = 0; i < 28; i++) {
+          final date = today.subtract(Duration(days: i));
+          final dateKey = _formatDate(date);
+          final seconds = recentActivity[dateKey] ?? 0;
+          
+          activityList.add({
+            'date': dateKey,
+            'total_seconds': seconds,
+          });
+        }
+        
+        final activityJson = jsonEncode(activityList);
+        
+        // Save for widget access (in prefs and widget)
+        await prefs.setInt('current_streak', currentStreak);
+        await prefs.setInt('longest_streak', longestStreak);
+        await prefs.setString('slack_id', slackId);
+        await prefs.setString('activity_data', activityJson);
+        await prefs.setInt('last_widget_update', currentTimeMillis);
+        
+        // Update today's activity for quick display
+        final todayKey = _formatDate(today);
+        final todaySeconds = recentActivity[todayKey] ?? 0;
+        
+        // Format time for display (e.g., "2h 15m")
+        final formattedTime = _formatTimeDisplay(todaySeconds);
+        
+        // Calculate activity percentage for visual indicator
+        final maxDailySeconds = 8 * 3600; // 8 hours as max
+        final percentComplete = todaySeconds / maxDailySeconds;
+        final percentFormatted = _formatPercentage(percentComplete);
+        
+        // Save percentage data for widget
+        await prefs.setString('today_percentage', percentFormatted);
+        
+        // Save data to SharedPreferences for widget access
+        final widgetPrefs = await SharedPreferences.getInstance();
+        await widgetPrefs.setString('com.example.hacwidd.HacwiddWidget.activity_data', activityJson);
+        await widgetPrefs.setInt('com.example.hacwidd.HacwiddWidget.current_streak', currentStreak);
+        await widgetPrefs.setInt('com.example.hacwidd.HacwiddWidget.longest_streak', longestStreak);
+        await widgetPrefs.setString('com.example.hacwidd.HacwiddWidget.slack_id', slackId);
+        await widgetPrefs.setString('com.example.hacwidd.HacwiddWidget.today_formatted', formattedTime);
+        
+        // Import our widget fixer
+        try {
+          // Use widget data helper import for type safety
+          await HomeWidget.saveWidgetData('current_streak', currentStreak.toString());
+          await HomeWidget.saveWidgetData('longest_streak', longestStreak.toString());
+          await HomeWidget.saveWidgetData('slack_id', slackId);
+          await HomeWidget.saveWidgetData('activity_data', activityJson);
+          await HomeWidget.saveWidgetData('today_seconds', todaySeconds.toString());
+          await HomeWidget.saveWidgetData('today_formatted', formattedTime);
+          await HomeWidget.saveWidgetData('today_percentage', percentFormatted);
+          
+          // Update widget
+          await HomeWidget.updateWidget(
+            androidName: 'com.example.hacwidd.HacwiddWidgetProvider',
+            iOSName: 'HacwiddWidgetProvider',
+          );
+          
+          debugPrint('Widget data updated successfully');
+        } catch (e) {
+          debugPrint('Error saving widget data: $e');
+        }
+      } else {
+        debugPrint('No data received from API');
+      }
+    } catch (e) {
+      debugPrint('Error updating widget data: $e');
+    }
+  }
+  
+  /// Format seconds into a readable time display with improved clarity
+  static String _formatTimeDisplay(int seconds) {
+    if (seconds == 0) return "0h";
+    
+    final hours = seconds ~/ 3600;
+    final minutes = (seconds % 3600) ~/ 60;
+    
+    // More detailed formatting with better readability
+    if (hours > 0) {
+      if (minutes > 0) {
+        // Show both hours and minutes
+        return "${hours}h ${minutes}m";
+      }
+      // Only show hours
+      return "${hours}h";
+    } else if (minutes > 0) {
+      // Only show minutes
+      return "${minutes}m";
+    } else {
+      // Show seconds if less than a minute
+      return "${seconds}s";
+    }
+  }
+  
+  /// Fetch recent activity data from Hackatime API
+  static Future<Map<String, dynamic>?> _fetchRecentActivityData(String slackId) async {
+    try {
+      final endpoint = 'https://hackatime.hackclub.com/api/v1/users/$slackId/heartbeats/spans';
+      final response = await http.get(
+        Uri.parse(endpoint),
+        headers: {'Content-Type': 'application/json'},
+      );
+      
+      if (response.statusCode == 200) {
+        debugPrint('API response status code: ${response.statusCode}');
+        
+        try {
+          // Parse the JSON response
+          final Map<String, dynamic> parsedJson = jsonDecode(response.body);
+          
+          // Log a small sample of the response data for debugging
+          if (parsedJson.containsKey('spans') && parsedJson['spans'] is List) {
+            final spans = parsedJson['spans'] as List;
+            if (spans.isNotEmpty) {
+              final firstSpan = spans.first;
+              debugPrint('Sample span data: ${firstSpan.runtimeType} - ${firstSpan.toString()}');
+              if (firstSpan is Map<String, dynamic>) {
+                firstSpan.forEach((key, value) {
+                  debugPrint('  Key: $key, Type: ${value.runtimeType}, Value: $value');
+                });
+              }
+            }
+          }
+          
+          // Apply simple sanitization to ensure we're returning a Map<String, dynamic>
+          // rather than a more complex transformation
+          return parsedJson;
+        } catch (e) {
+          debugPrint('Error parsing API response: $e');
+          return null;
+        }
+      }
+      return null;
+    } catch (e) {
+      debugPrint('Error fetching activity data: $e');
+      return null;
+    }
+  }
+  
+  /// Process activity data for widget display
+  static Map<String, dynamic> _processActivityData(Map<String, dynamic> data) {
+    Map<String, int> activityMap = {};
+    
+    // Extract and process spans
+    final spans = data['spans'] as List<dynamic>?;
+    if (spans != null) {
+      debugPrint('🔍 Found ${spans.length} spans in API response');
+      
+      int processedCount = 0;
+      int activeCount = 0;
+        
+      for (final span in spans) {
+        // Get values with safe conversion
+        String? startTimeStr;
+        String? endTimeStr;
+        int? duration;
+        
+        // Safe parsing of the span data
+        try {
+          // Handle start_time which could be various formats
+          if (span['start_time'] is String) {
+            startTimeStr = span['start_time'] as String;
+          } else if (span['start_time'] is num) {
+            // Convert timestamp to ISO string
+            final timestamp = (span['start_time'] as num).toDouble();
+            startTimeStr = DateTime.fromMillisecondsSinceEpoch(
+              (timestamp * 1000).round()).toIso8601String();
+          }
+          
+          // Handle end_time which could be various formats
+          if (span['end_time'] is String) {
+            endTimeStr = span['end_time'] as String;
+          } else if (span['end_time'] is num) {
+            // Convert timestamp to ISO string
+            final timestamp = (span['end_time'] as num).toDouble();
+            endTimeStr = DateTime.fromMillisecondsSinceEpoch(
+              (timestamp * 1000).round()).toIso8601String();
+          }
+          
+          // Handle duration which could be string or int
+          if (span['duration_seconds'] is String) {
+            duration = int.tryParse(span['duration_seconds'] as String) ?? 0;
+          } else if (span['duration_seconds'] is num) {
+            duration = (span['duration_seconds'] as num).round();
+          }
+        } catch (e) {
+          debugPrint('Error parsing span: $e');
+          continue; // Skip this span if there's an error
+        }
+        
+        if (startTimeStr != null && endTimeStr != null && duration != null) {
+          try {
+            final startTime = DateTime.parse(startTimeStr);
+            final endTime = DateTime.parse(endTimeStr);
+            
+            // Handle spans across days
+            final daysDiff = endTime.difference(startTime).inDays + 1;
+            final durationPerDay = duration / daysDiff;
+            
+            for (int i = 0; i < daysDiff; i++) {
+              final date = startTime.add(Duration(days: i));
+              final dateKey = _formatDate(date);
+              
+              activityMap[dateKey] = (activityMap[dateKey] ?? 0) + durationPerDay.round();
+            }
+          } catch (e) {
+            debugPrint('Error processing span: $e');
+            // Skip this span if there's a parsing error
+          }
+        }
+      }
+    }
+    
+    // Calculate streaks
+    final currentStreak = _calculateCurrentStreak(activityMap);
+    final longestStreak = _calculateLongestStreak(activityMap);
+    
+    // Get recent activity (last 28 days) for the widget
+    final now = DateTime.now();
+    final Map<String, int> recentActivity = {};
+    
+    for (int i = 0; i < 28; i++) {
+      final date = now.subtract(Duration(days: i));
+      final dateKey = _formatDate(date);
+      recentActivity[dateKey] = activityMap[dateKey] ?? 0;
+    }
+    
+    return {
+      'recentActivity': recentActivity,
+      'currentStreak': currentStreak,
+      'longestStreak': longestStreak,
+    };
+  }
+  
+  /// Calculate current streak
+  static int _calculateCurrentStreak(Map<String, int> activityMap) {
+    // Get today and convert to string format
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    
+    // Convert to list of dates with activity
+    final activeDates = activityMap.entries
+        .where((entry) => entry.value > 0)
+        .map((entry) => _parseDate(entry.key))
+        .toList()
+        ..sort((a, b) => b.compareTo(a)); // Sort descending
+    
+    if (activeDates.isEmpty) return 0;
+    
+    // Check if most recent activity is today or yesterday
+    final daysSinceLastActivity = today.difference(activeDates.first).inDays;
+    if (daysSinceLastActivity > 1) {
+      return 0; // Streak broken
+    }
+    
+    // Count consecutive days backwards
+    int streak = 1;
+    DateTime expectedDate = activeDates.first;
+    
+    for (int i = 1; i < activeDates.length; i++) {
+      final previousDate = activeDates[i];
+      expectedDate = expectedDate.subtract(const Duration(days: 1));
+      
+      if (previousDate.year == expectedDate.year && 
+          previousDate.month == expectedDate.month && 
+          previousDate.day == expectedDate.day) {
+        streak++;
+      } else {
+        break;
+      }
+    }
+    
+    return streak;
+  }
+  
+  /// Calculate longest streak historically
+  static int _calculateLongestStreak(Map<String, int> activityMap) {
+    if (activityMap.isEmpty) return 0;
+    
+    // Convert to list of dates with activity
+    final activeDates = activityMap.entries
+        .where((entry) => entry.value > 0)
+        .map((entry) => _parseDate(entry.key))
+        .toList()
+        ..sort((a, b) => a.compareTo(b)); // Sort ascending
+    
+    if (activeDates.isEmpty) return 0;
+    
+    int longestStreak = 1;
+    int currentStreak = 1;
+    DateTime previousDate = activeDates[0];
+    
+    // Find longest sequence of consecutive days
+    for (int i = 1; i < activeDates.length; i++) {
+      final currentDate = activeDates[i];
+      final difference = currentDate.difference(previousDate).inDays;
+      
+      if (difference == 1) {
+        // Consecutive day
+        currentStreak++;
+        longestStreak = currentStreak > longestStreak ? currentStreak : longestStreak;
+      } else if (difference > 1) {
+        // Streak broken
+        currentStreak = 1;
+      }
+      
+      previousDate = currentDate;
+    }
+    
+    return longestStreak;
+  }
+  
+  /// Parse date string to DateTime
+  static DateTime _parseDate(String dateString) {
+    final parts = dateString.split('-');
+    return DateTime(
+      int.parse(parts[0]), 
+      int.parse(parts[1]), 
+      int.parse(parts[2])
+    );
+  }
+  
+  /// Format date as YYYY-MM-DD
+  static String _formatDate(DateTime date) {
+    return "${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}";
+  }
+  
+  /// Format a value as a percentage for widget display
+  static String _formatPercentage(double value) {
+    if (value <= 0) return "0%";
+    if (value >= 1) return "100%";
+    
+    // Format to at most 1 decimal place and remove trailing zeros
+    final percent = (value * 100).toStringAsFixed(1).replaceAll(RegExp(r'\.0$'), '');
+    return "$percent%";
+  }
+  
+  /// Sanitize JSON data to ensure all timestamp-like values are converted to strings
+  /// This prevents type errors when saving numeric values to widget storage
+  static Map<String, dynamic> _sanitizeJsonData(Map<String, dynamic> data) {
+    Map<String, dynamic> sanitized = {};
+    
+    data.forEach((key, value) {
+      if (value is Map<String, dynamic>) {
+        // Recursively sanitize nested maps
+        sanitized[key] = _sanitizeJsonData(value);
+      } else if (value is List) {
+        // Sanitize lists
+        sanitized[key] = _sanitizeList(value);
+      } else if (value is int || value is double) {
+        // Convert numeric values to strings to avoid type errors
+        sanitized[key] = value.toString();
+      } else {
+        // Keep other values as is
+        sanitized[key] = value;
+      }
+    });
+    
+    return sanitized;
+  }
+  
+  /// Helper method to sanitize lists in JSON data
+  static List<dynamic> _sanitizeList(List<dynamic> list) {
+    return list.map((item) {
+      if (item is Map<String, dynamic>) {
+        return _sanitizeJsonData(item);
+      } else if (item is List) {
+        return _sanitizeList(item);
+      } else if (item is int || item is double) {
+        return item.toString();
+      } else {
+        return item;
+      }
+    }).toList();
+  }
+  
+  // Removed unused method
+  }
+}
+
+/// Callback dispatcher for the background task
+@pragma('vm:entry-point')
+void callbackDispatcher() {
+  Workmanager().executeTask((task, inputData) async {
+    if (task == HacwidWidget.backgroundTaskName) {
+      final slackId = inputData?[HacwidWidget.backgroundTaskInputData] ?? '1';
+      await HacwidWidget.updateWidgetData(slackId);
+      return true;
+    }
+    return false;
+  });
+}

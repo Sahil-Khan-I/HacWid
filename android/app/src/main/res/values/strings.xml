@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Hacwidd</string>
+    <string name="widget_title">Hackatime Widget</string>
+    <string name="widget_description">Hackatime Activity Widget</string>
+    <string name="minimal_widget_description">Minimal Hackatime Widget</string>
+    <string name="hacwidd_widget_description">Hackatime Widget</string>
+</resources>
